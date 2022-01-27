@@ -1,0 +1,139 @@
+
+#! pip install bs4
+#! pip install urllib
+#! pip install re
+
+from bs4 import BeautifulSoup 
+### Import the web scarbing package in Python and named it as BeautifulSoup
+
+from urllib.request import urlopen 
+
+### Import the url web open tool package in Python and named is as urlopen
+#### Use the URL identified above and write code that loads eBay’s search result page for “lg phone”.
+#### Save the result to a file. (Please give it a meaningful filename. E.g., “ebay_lg_phone_01.htm”.)
+
+url = "https://www.ebay.com/"  ### Set the url of the Ebay website
+
+search = "lg+phone" ### Set the search term 
+
+url2 = url + 'sch/i.html?_nkw=' + search ### Set the search url
+
+response=urlopen(url2) 
+### Open the Ebay website and store the object as response which can 
+### work as a context manager and has the properties url
+
+import urllib.request
+ 
+### Create the function to open and read the url, return the html result
+def getHtml(url):
+    html = urllib.request.urlopen(url).read()
+    return html
+ 
+### Save the page information into .html file
+def saveHtml(file_name, file_content):
+    with open(file_name.replace('/', '_') + ".html", "wb") as f:
+        f.write(file_content)
+
+### Get the searched page
+html = getHtml(url2)
+saveHtml("ebay_lg_phone_01", html)
+#print(html)
+
+
+url = "https://www.ebay.com/"  ### Set the url of the Ebay website
+
+search = "lg+phone" ### Set the search term 
+
+page = "&_pgn=" ### Set page number 
+
+url2 = url + 'sch/i.html?_nkw=' + search + page### Set the search url
+
+import requests
+import time 
+
+for i in range(1,11):   ### request 10 pages of the search results
+    headers ={'user-agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Mobile Safari/537.36'
+    } ### Use headers to imitate as a human user
+    myurl = url2 + str(i)  ### Set 1 to 10 page number 
+    filename = "ebay_lg_phone_"+str(i) ### Create page url
+    response_1=requests.get(myurl, headers=headers) ## get url results
+    time.sleep(10) ### sleep 10 seconds 
+    print(myurl)
+    f = open(filename.replace('/', '_') + ".html", "wb") ### Open an empty html file
+    f.write(response_1.content)#save to page.html
+    f.close()
+
+### Write a separate piece of code that loops through the pages you downloaded in (b) and opens and parses them into a Python or Java xxxxsoup-object. Next find the number of bids of each item on each search result page and print them to screen along with each item’s URL
+
+my_dict={}  
+## Create an empty dictionary to store the output
+
+for i in range(1,11):
+    filename = "ebay_lg_phone_"+str(i) +".html" 
+    ### read 10 files 
+    
+    with open(filename, 'r', encoding='utf-8') as f:
+        webpage = BeautifulSoup(f.read(), 'html.parser') 
+        ###open html files and parse the result
+    
+    items = webpage.find_all('div', attrs={'class': 's-item__wrapper clearfix'})
+    ### find all items which have the information we need
+    
+    for j in items:
+        a= j.find('span', attrs={'class': 's-item__bids s-item__bidCount'})   
+        ### identify whether the item has bids
+        if a is not None :    
+            ### if the item has bids then return the text 
+            name=j.find('h3', attrs={'class': 's-item__title'}).text 
+            ###return the item title
+            link=j.find('a', href=True)['href']  
+            ### Return the link of the accepted item
+            bid=j.find('span', attrs={'class': 's-item__bids s-item__bidCount'}).text 
+            ###return the number of bids
+            my_dict[name] =[]   
+            my_dict[name].append(bid)  
+            ### Save item title as key and bids, link as the values into my dictionary
+            my_dict[name].append(link)
+
+### Print the results from my dict
+for key,value in my_dict.items():
+    print('{key}: {value0} , {value1}'.format(key = key, value0= value[0],value1= value[1]))
+
+
+### Why I still keep this part: The class of the sponsored is dynamic, each time I open the page , 
+### some items have sponsored, 
+### However, in the elements of the web page, every item has few class with different values with text of one letter. 
+### This is the CSS of the page
+### In this part, I wrote regex to find the rules the web set in the code, 
+### and find the unqiue class for each time open the page
+### Using this method, I can locate the right item with sponsored.
+
+my_dict={}
+for i in range(1,11):
+    filename = "ebay_lg_phone_"+str(i) +".html"
+    
+    with open(filename, 'r', encoding='utf-8') as f:
+        webpage = BeautifulSoup(f.read(), 'html.parser')
+    
+    code=str(webpage)   ## Extract all the web code
+    
+    # The rule of css in the web code is like this format: 
+    ## <style type="text/css">span.s-m1yuhh {display: inline;}span.s-o2xlx7k { display: none;}</style>
+    import re
+    ## apply this regex can extract the class we want to locate the item with sponored
+    span = re.findall('span\.([^\s\{]+)\s*\{\s*display\:\s*inline',code)
+    span = ''.join(span)
+    sponsor = webpage.find_all('div', attrs={'class': 's-item__wrapper clearfix'})
+    
+    for j in sponsor:
+        a= j.find('span', attrs={'class': span})  
+        ## If the item has this class, it's sponsored item
+        if a is not None :
+            name=j.find('h3', attrs={'class': 's-item__title'}).text 
+            ### get the item tilte, link
+            link=j.find('a', href=True)['href']
+            my_dict[name] =link
+my_dict.pop('')
+### print the results of the sponsored items and the links
+for key,value in my_dict.items(): 
+    print('{key}: {value}'.format(key = key, value = value))
