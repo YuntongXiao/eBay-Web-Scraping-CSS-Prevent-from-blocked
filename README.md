@@ -2,6 +2,7 @@
 This project provides method to get the html file from ebay.com By setting header to imitate the human user, prevent you from being blocked by the website Using regex get the CSS rules of eBay, help identify the sponsored items.
 
 ---How to find CSS in web pages
+
 my_dict={}
 for i in range(1,11):
     filename = "ebay_lg_phone_"+str(i) +".html"
@@ -28,6 +29,5 @@ for i in range(1,11):
             link=j.find('a', href=True)['href']
             my_dict[name] =link
 my_dict.pop('')
-----print the results of the sponsored items and the links
 for key,value in my_dict.items(): 
     print('{key}: {value}'.format(key = key, value = value))
